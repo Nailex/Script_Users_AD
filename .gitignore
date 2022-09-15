@@ -1,18 +1,37 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+$CSVFile = "C:\Scripts\AD_USERS\Utilisateurs.csv"
+$CSVData = Import-CSV -Path $CSVFile -Delimiter ";" -Encoding UTF8
 
-# Other files and folders
-.settings/
+Foreach($Utilisateur in $CSVData){
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+    $UtilisateurPrenom = $Utilisateur.PRENOM
+    $UtilisateurNom = $Utilisateur.NOM
+    $UtilisateurLogin = ($UtilisateurPrenom).Substring(0,1) + "." + $UtilisateurNom
+    $UtilisateurMotDePasse = "Azerty1234"
+    $UtilisateurFonction = $Utilisateur.service
+    $OU = $Utilisateur.service
+    $OUU = $Utilisateur.SousService
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+
+    # Vérifier la présence de l'utilisateur dans l'AD
+    if (Get-ADUser -Filter {SamAccountName -eq $UtilisateurLogin})
+    {
+        Write-Warning "L'identifiant $UtilisateurLogin existe déjà dans l'AD"
+    }
+    else
+    {
+        New-ADUser -Name "$UtilisateurNom $UtilisateurPrenom" `
+                    -DisplayName "$UtilisateurNom $UtilisateurPrenom" `
+                    -GivenName $UtilisateurPrenom `
+                    -Surname $UtilisateurNom `
+                    -SamAccountName $UtilisateurLogin `
+                    -UserPrincipalName "$UtilisateurLogin@it-connect.local" `
+                    -EmailAddress $UtilisateurEmail `
+                    -Title $UtilisateurFonction `
+                    -Path "OU=$OUU,OU=$OU,OU=Utilisateurs,DC=orleans,DC=sportludique,DC=fr" `
+                    -AccountPassword(ConvertTo-SecureString $UtilisateurMotDePasse -AsPlainText -Force) `
+                    -ChangePasswordAtLogon $true `
+                    -Enabled $true
+        Write-Output "Création de l'utilisateur : $UtilisateurLogin ($UtilisateurNom $UtilisateurPrenom)"
+    }
+}
+ 
